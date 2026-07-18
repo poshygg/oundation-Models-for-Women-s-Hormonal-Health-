@@ -1,0 +1,49 @@
+# Python
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Env
+.env
+!.env.example
+
+# Data (keep folder structure only)
+data/*
+!data/*/
+!data/**/.gitkeep
+
+# Experiments / runs
+experiments/*
+!experiments/*/
+!experiments/**/.gitkeep
+wandb/
+mlruns/
+
+# Model artifacts
+*.ckpt
+*.safetensors
+*.pth
+*.pt
+*.bin
+*.h5
+*.keras
+*.onnx
+*.tflite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
