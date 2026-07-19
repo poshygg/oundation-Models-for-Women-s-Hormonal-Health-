@@ -101,6 +101,14 @@ explain:
   shap: false
   shap_max_samples: 2000
 
+smoothing:
+  ## Temporal decode of OOF predictions. hsmm = explicit-duration (lifts macro-F1),
+  ## hmm = geometric (lifts accuracy only). skip_prob leaves mass for anovulatory
+  ## cycles that skip the Fertility window.
+  enabled: true
+  method: "hsmm"
+  skip_prob: 0.02
+
 logging:
   wandb_project: "hacknation-2026"
   wandb_tags: ["hormonal", "compare"]

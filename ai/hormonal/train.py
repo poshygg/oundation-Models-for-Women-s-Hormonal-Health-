@@ -174,6 +174,25 @@ def run_loso(cfg: dict, ds) -> dict:
         min_confidence=float(cfg["nocall"]["min_confidence"]),
         nocall_enabled=bool(cfg["nocall"]["enabled"]),
     )
+
+    ## Optional HSMM/HMM temporal smoothing of the OOF predictions — enforces the
+    ## cyclic phase order + duration priors, reported alongside the raw classifier.
+    scfg = cfg.get("smoothing", {})
+    if scfg.get("enabled") and ds.segment is not None:
+        from sklearn.metrics import accuracy_score, f1_score
+
+        from .smoothing import smooth_proba
+        labels = smooth_proba(oof_proba[evaluated], ds.segment[evaluated],
+                              method=scfg.get("method", "hsmm"),
+                              skip_prob=float(scfg.get("skip_prob", 0.02)))
+        yt = ds.y[evaluated]
+        report["smoothed"] = {
+            "method": scfg.get("method", "hsmm"),
+            "accuracy": float(accuracy_score(yt, labels)),
+            "macro_f1": float(f1_score(yt, labels, average="macro", labels=np.arange(N_CLASSES))),
+            "per_class_f1": {PHASES[k]: float(v) for k, v in enumerate(
+                f1_score(yt, labels, average=None, labels=np.arange(N_CLASSES)))},
+        }
     timing = {"total_seconds": round(float(np.sum(fold_times)), 2),
               "mean_fold_seconds": round(float(np.mean(fold_times)), 3),
               "n_folds": len(fold_times)}
@@ -436,6 +455,10 @@ def main() -> None:
     t = cv["timing"]
     print(f"  timing: {t['total_seconds']}s total over {t['n_folds']} folds "
           f"({t['mean_fold_seconds']}s/fold, fit+predict)")
+    if "smoothed" in cv["report"]:
+        s = cv["report"]["smoothed"]
+        print(f"  +{s['method']} smoothing: acc={s['accuracy']:.3f} macro-F1={s['macro_f1']:.3f} "
+              f"(raw macro-F1={r['macro_f1']:.3f})")
 
     ## Conformal no-call layer (distribution-free coverage guarantee) on the OOF
     ## probabilities. Replaces the ad-hoc confidence threshold when enabled.
