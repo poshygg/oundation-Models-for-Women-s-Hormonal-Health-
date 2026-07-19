@@ -1,31 +1,65 @@
-# Hack Nation MIT — 2026 Summer
+# Four-Phase Menstrual Cycle Classification on mcPHASES
 
-24시간 안에 실제 AI 프로덕트를 처음부터 빌드. 개인 작업환경 (팀 공유 X).
+**Hack Nation MIT — Challenge 05: Foundation Models for Women's Hormonal Health (Layer 02).**
 
-## 지금 바로
-1. `powershell -ExecutionPolicy Bypass -File .\scripts\setup_env.ps1`
-2. `wandb login` → `huggingface-cli login` → `copy .env.example .env`
-3. `pytest -q tests\test_smoke.py`
+A reproducible model and an open benchmark for inferring the four menstrual cycle phases —
+menstrual, follicular, fertility (ovulatory), and luteal — from daily self-reported symptoms
+and wearable physiology. Phase labels in mcPHASES come from at-home hormone assays, so the
+hormone readings are treated as label sources and kept out of the feature set.
 
-## 폴더
-- **docs/** — 대회 정보, 셋업 가이드, 24h 플랜, 모델 레지스트리, 워크플로우, 포터빌리티 가이드, 시간 예산 게이트
-- **ai/** — harness(논문 검색 + eval) / CNN / LLM (실험 코드)
-- **ml/** — PyTorch / TensorFlow 트레이닝 스켈레톤 (둘 다 준비)
-- **scripts/** — 환경 셋업, MLflow/WandB 실행, quick_start, time_probe
-- **requirements/** — 목적별 분리 (base / pytorch / tensorflow / ai_harness / ml_extra / dev)
-- **data/** · **experiments/** — gitignore
-- **memory/experiment_log.md** — 실험별 결과 노트
+Evaluated leave-one-subject-out over 42 participants, reported with subject-bootstrap
+confidence intervals. The model abstains (no-call) via conformal prediction when it is not
+confident, rather than forcing a phase.
 
-## Training code: search papers -> time budget gate -> write code
-1. `python -m harness "<query>"` to find a reference paper (`ai/harness/papers/README.md`)
-2. `python scripts\time_probe.py --steps-per-epoch N --epochs N --step-seconds N --phase N` for a go/no-go check (`docs/time_budgeting.md`)
-3. If it passes, extend the `ml/`/`ai/` skeletons — full rules in `CLAUDE.md`
+## What's here
 
-## 실험 = 브랜치 + wandb run + config 1:1:1
-새 실험: `.\scripts\quick_start.ps1 -Name "cnn-baseline" -Kind "cnn"`
+```
+benchmark/                 open benchmark: frozen LOSO split + model-agnostic CI scorer
+  ├── eval/ci_harness.py     score any out-of-fold predictions with bootstrap CIs
+  ├── eval/reference_model.py the two-stage reference model, end to end
+  ├── splits/loso_folds.json  frozen 42-fold subject split
+  ├── results/                reference out-of-fold predictions
+  └── MODEL_CARD.md
+ml/mcphases/               data assembly + pipeline (features, HSMM, fertility detector, conformal, SHAP)
+ai/hormonal/               model code (classification + hormone-regression branches)
+docs/challenges/05-womens-hormonal-health/technical-report.md   full write-up
+notebooks/eda_figures/     exploratory analysis figures
+data/                      folder structure only; raw mcPHASES is not redistributed (see below)
+```
 
-## 하드웨어 바뀔 때
-`.env` 와 `requirements/pytorch.txt` 딱 2개만 손봄. `docs/portability_guide.md` 참조.
+## Results (out-of-fold, LOSO, N=42)
 
-## 팀 저장소
-아직 미정. 팀장이 만들면 `git remote add origin <url>` 후 push.
+| model | macro-F1 [95% CI] | accuracy | fertility F1 |
+|---|---|---|---|
+| base classifier + HSMM | 0.654 [0.601, 0.701] | 0.671 | 0.498 |
+| two-stage (+ fertility detector) | **0.667 [0.620, 0.709]** | 0.678 | **0.531** |
+
+Backend choice is not the lever — CatBoost, XGBoost, and LightGBM land within ~0.01 of each
+other. The gains come from data alignment, the cycle-position feature, and the dedicated
+fertility detector. Full details in the [technical report](docs/challenges/05-womens-hormonal-health/technical-report.md).
+
+## Reproducing
+
+```bash
+python ml/mcphases/build_master.py            # assemble the aligned daily table
+python benchmark/eval/reference_model.py       # train + write out-of-fold predictions
+python benchmark/eval/ci_harness.py            # score with bootstrap CIs
+```
+
+Seeds are fixed (42) and the split is frozen, so the numbers above regenerate.
+
+## Data
+
+This repository redistributes **no raw mcPHASES data**. mcPHASES is distributed by PhysioNet
+under its own credentialed-access license; obtain the raw data directly from
+https://physionet.org/content/mcphases/ and place it under `data/raw/mcphases/`.
+
+## License
+
+MIT (see `LICENSE`) — covers this repository's own code, evaluation harness, splits, and
+documentation, not the underlying dataset.
+
+## Note
+
+Research and infrastructure, not a medical device. No diagnostic claim is made. The cohort is
+small (42 young adults, one region), so external validity to broader populations is untested.
