@@ -1,0 +1,84 @@
+# ai/hormonal/configs/phase-clf-ebm.yaml
+# Explainable Boosting Machine (glassbox GAM) + conformal no-call.
+#
+# Why EBM here: the challenge scores explainability and scientific rigor. EBM is
+# a glassbox — its per-feature shape functions ARE the model, so global feature
+# effects come out for free the moment training finishes (no SHAP/Kernel pass).
+# Combined with the conformal layer (finite-sample coverage guarantee), this
+# hits both the "explainability" and "rigor" axes with a fully transparent,
+# reproducible model.
+#
+# Cost note: EBM fits slightly slower than CatBoost, and LOSO refits it once per
+# subject (~41x). On this dataset that is still seconds/fold -> a few minutes
+# total, and inference + explanation are cheaper than a black-box + SHAP.
+
+experiment:
+  name: "phase-clf-ebm"
+  kind: "hormonal"
+  seed: 42
+
+data:
+  processed_table: "./data/processed/mcphases_daily.parquet"
+  subject_col: "id"
+  time_col: "day_in_study"
+  label_col: "phase"
+  interval_col: "study_interval"
+  synth_subjects: 41
+  synth_days_per_subject: 90
+  synth_irregular_frac: 0.25
+
+features:
+  rolling_windows: [3, 5]
+  add_subject_baseline_deltas: true
+  feature_set: "all"          # all | symptoms_only | wearables_only
+
+split:
+  scheme: "loso"
+  max_folds: null
+
+model:
+  backend: "ebm"
+  params:
+    ebm:
+      ## Multiclass EBM does not support pairwise interactions -> keep at 0.
+      interactions: 0
+      learning_rate: 0.02
+      max_bins: 256
+      outer_bags: 8
+      random_state: 42
+      n_jobs: -1
+
+calibration:
+  ## EBM posteriors are reasonable; conformal (below) provides the guarantee.
+  method: "none"
+
+nocall:
+  enabled: true
+  min_confidence: 0.45
+
+conformal:
+  ## LAC (1 - p(true)) is the well-behaved default: coverage tracks the target
+  ## and confident predictions collapse to singletons. APS gives better class-
+  ## conditional coverage on softer probabilities but is over-conservative (huge
+  ## sets) when the model is near-deterministic, so switch to it only if the OOF
+  ## probabilities are diffuse.
+  enabled: true
+  method: "lac"          # lac | aps
+  alpha: 0.1             # target coverage 1 - alpha = 0.90
+  n_splits: 5
+
+explain:
+  ## Ignored for EBM (importances are extracted from the shape functions for
+  ## free); kept for schema compatibility.
+  shap: false
+  shap_max_samples: 2000
+
+metrics:
+  primary: "macro_f1"
+  report_by_regularity: true
+
+logging:
+  wandb_project: "hacknation-2026"
+  wandb_tags: ["hormonal", "ebm", "conformal"]
+  mlflow_experiment: "hormonal-phase-clf"
+  out_dir: "./experiments/hormonal"

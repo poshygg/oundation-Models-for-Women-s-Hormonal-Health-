@@ -1,0 +1,102 @@
+# ai/hormonal/configs/phase-clf-baseline.yaml
+# Challenge 05 — 4-phase menstrual cycle classification on mcPHASES.
+# Inherits the spirit of configs/base.yaml but this task is tabular gradient
+# boosting, not a deep net, so it carries its own schema.
+
+experiment:
+  name: "phase-clf-baseline"
+  kind: "hormonal"
+  seed: 42
+
+data:
+  ## Real mcPHASES daily table (id / day_in_study / phase / hormones / wearables /
+  ## symptoms). If absent, data.py synthesizes a physiology-grounded dataset with
+  ## the SAME column names so the pipeline runs end-to-end today.
+  processed_table: "./data/processed/mcphases_daily.parquet"
+  subject_col: "id"
+  time_col: "day_in_study"
+  label_col: "phase"               # Menstrual | Follicular | Fertility | Luteal
+  interval_col: "study_interval"   # a subject may have two recording segments
+  ## Synthetic fallback knobs (ignored once the real table is present).
+  synth_subjects: 41
+  synth_days_per_subject: 90
+  synth_irregular_frac: 0.25
+
+features:
+  ## Physiology-grounded engineering. Rolling stats are computed WITHIN subject
+  ## so no information crosses the LOSO boundary.
+  rolling_windows: [3, 5]     # days
+  add_subject_baseline_deltas: true   # deviation from each subject's follicular baseline
+  ## Ablation switch: "symptoms_only" reproduces the SOTA input (self-report,
+  ## no wearables); "all" adds Fitbit + CGM on top — our contribution.
+  feature_set: "all"          # all | symptoms_only | wearables_only
+
+split:
+  scheme: "loso"              # leave-one-subject-out — the honest, hard split
+  ## Set to an int to run only the first K folds for a fast smoke test.
+  max_folds: null
+
+model:
+  backend: "catboost"         # catboost | xgboost | lightgbm
+  ## Kept modest for a 24h budget; CatBoost tolerates small-N tabular well.
+  params:
+    catboost:
+      iterations: 600
+      depth: 6
+      learning_rate: 0.05
+      l2_leaf_reg: 6.0
+      loss_function: "MultiClass"
+      auto_class_weights: "Balanced"
+      random_seed: 42
+      verbose: false
+    xgboost:
+      n_estimators: 600
+      max_depth: 5
+      learning_rate: 0.05
+      subsample: 0.8
+      colsample_bytree: 0.8
+      objective: "multi:softprob"
+      random_state: 42
+    lightgbm:
+      n_estimators: 600
+      num_leaves: 31
+      learning_rate: 0.05
+      subsample: 0.8
+      colsample_bytree: 0.8
+      class_weight: "balanced"
+      random_state: 42
+
+calibration:
+  ## Post-hoc calibration fitted per fold on held-in data via an internal split.
+  method: "isotonic"          # isotonic | sigmoid | none
+
+nocall:
+  ## Ad-hoc confidence-threshold abstention. Kept for comparison, but the
+  ## conformal layer below is the principled no-call (coverage guarantee).
+  enabled: true
+  min_confidence: 0.45
+
+conformal:
+  ## Distribution-free prediction sets on the OOF probabilities. Decisive =
+  ## singleton set; abstain = 0 or >1 phases. Model-agnostic, no extra fits.
+  ## LAC is the robust default; APS gives better conditional coverage on softer
+  ## probabilities but over-inflates sets when the model is near-deterministic.
+  enabled: true
+  method: "lac"          # lac (robust default) | aps (adaptive, conditional coverage)
+  alpha: 0.1             # target coverage 1 - alpha = 0.90
+  n_splits: 5            # subject-grouped folds for the conformal calibration
+
+explain:
+  shap: true
+  shap_max_samples: 2000      # cap for runtime; SHAP on a subsample
+
+metrics:
+  ## Primary comparison point: macro-F1 vs SOTA 0.662 (LOSO, 4-phase).
+  primary: "macro_f1"
+  report_by_regularity: true
+
+logging:
+  wandb_project: "hacknation-2026"
+  wandb_tags: ["hormonal", "baseline"]
+  mlflow_experiment: "hormonal-phase-clf"
+  out_dir: "./experiments/hormonal"

@@ -1,0 +1,75 @@
+# ai/hormonal/configs/phase-clf-tabpfn.yaml
+# Same task as phase-clf-baseline, TabPFN backend instead of gradient boosting.
+#
+# TabPFN v2 is a pre-trained transformer that classifies by IN-CONTEXT learning:
+# there is no gradient training here. "fit" just stores the training rows as
+# context; "predict" is a single forward pass through the frozen network. Under
+# LOSO this means each fold is fit(~3.6k rows) + predict(~90 rows) with no
+# optimizer loop — timing is dominated by forward passes, not epochs.
+#
+# Fits this task: mcPHASES is small-N tabular (< 10k rows, < 500 features,
+# <= 10 classes), exactly TabPFN v2's supported regime.
+
+experiment:
+  name: "phase-clf-tabpfn"
+  kind: "hormonal"
+  seed: 42
+
+data:
+  processed_table: "./data/processed/mcphases_daily.parquet"
+  subject_col: "id"
+  time_col: "day_in_study"
+  label_col: "phase"
+  interval_col: "study_interval"
+  synth_subjects: 41
+  synth_days_per_subject: 90
+  synth_irregular_frac: 0.25
+
+features:
+  rolling_windows: [3, 5]
+  add_subject_baseline_deltas: true
+  feature_set: "all"          # all | symptoms_only | wearables_only
+
+split:
+  scheme: "loso"
+  max_folds: null
+
+model:
+  backend: "tabpfn"
+  params:
+    tabpfn:
+      device: "cpu"           # "cuda" if a GPU is available -> ~10-50x faster
+      n_estimators: 4         # forward-pass ensemble size; lower = faster
+      ignore_pretraining_limits: false
+      random_state: 42
+
+calibration:
+  ## TabPFN is trained to output calibrated posteriors, so post-hoc calibration
+  ## is off by default (it would add forward passes for little gain).
+  method: "none"
+
+nocall:
+  enabled: true
+  min_confidence: 0.45
+
+conformal:
+  enabled: true
+  method: "lac"          # lac (robust default) | aps
+  alpha: 0.1
+  n_splits: 5
+
+explain:
+  ## SHAP TreeExplainer does not apply to a neural in-context learner; the
+  ## runner skips it automatically for this backend.
+  shap: false
+  shap_max_samples: 2000
+
+metrics:
+  primary: "macro_f1"
+  report_by_regularity: true
+
+logging:
+  wandb_project: "hacknation-2026"
+  wandb_tags: ["hormonal", "tabpfn"]
+  mlflow_experiment: "hormonal-phase-clf"
+  out_dir: "./experiments/hormonal"

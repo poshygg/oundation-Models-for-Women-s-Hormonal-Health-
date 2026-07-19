@@ -1,0 +1,108 @@
+# ai/hormonal/configs/compare.yaml
+# Config for compare.py: runs several classification backends AND the regression
+# branch under one identical LOSO split, then tabulates. Params for every backend
+# live here so the comparison is apples-to-apples on the same data + split.
+
+experiment:
+  name: "compare"
+  kind: "hormonal"
+  seed: 42
+
+data:
+  processed_table: "./data/processed/mcphases_daily.parquet"
+  subject_col: "id"
+  time_col: "day_in_study"
+  label_col: "phase"
+  interval_col: "study_interval"
+  synth_subjects: 41
+  synth_days_per_subject: 90
+  synth_irregular_frac: 0.25
+
+features:
+  rolling_windows: [3, 5]
+  add_subject_baseline_deltas: true
+  feature_set: "all"
+
+split:
+  scheme: "loso"
+  max_folds: null
+
+## Which models to put head-to-head.
+compare:
+  classification_backends: ["lightgbm", "xgboost", "catboost", "ebm"]  # tabpfn added if TABPFN_TOKEN is set
+  include_tabpfn: true
+  regression_backend: "lightgbm"
+
+model:
+  backend: "lightgbm"   # default; overridden per backend by compare.py
+  params:
+    catboost:
+      iterations: 300
+      depth: 6
+      learning_rate: 0.05
+      l2_leaf_reg: 6.0
+      loss_function: "MultiClass"
+      auto_class_weights: "Balanced"
+      random_seed: 42
+      verbose: false
+    xgboost:
+      n_estimators: 300
+      max_depth: 5
+      learning_rate: 0.05
+      subsample: 0.8
+      colsample_bytree: 0.8
+      objective: "multi:softprob"
+      random_state: 42
+    lightgbm:
+      n_estimators: 300
+      num_leaves: 31
+      learning_rate: 0.05
+      subsample: 0.8
+      colsample_bytree: 0.8
+      class_weight: "balanced"
+      random_state: 42
+    ebm:
+      interactions: 0
+      learning_rate: 0.02
+      max_bins: 256
+      outer_bags: 4
+      random_state: 42
+      n_jobs: -1
+    tabpfn:
+      device: "cuda"                  # RTX 4060; falls back to CPU if CUDA unavailable
+      n_estimators: 4                 # GPU is fast enough to raise this for full feature coverage
+      ignore_pretraining_limits: true # our 233 feats / 5568 rows exceed TabPFN defaults
+      random_state: 42
+
+## Regression-branch hyperparameters (one model per hormone).
+regression_params:
+  lightgbm:
+    n_estimators: 300
+    num_leaves: 31
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    random_state: 42
+
+calibration:
+  method: "none"     # conformal handles uncertainty; keep backends comparable
+
+nocall:
+  enabled: true
+  min_confidence: 0.45
+
+conformal:
+  enabled: true
+  method: "lac"
+  alpha: 0.1
+  n_splits: 5
+
+explain:
+  shap: false
+  shap_max_samples: 2000
+
+logging:
+  wandb_project: "hacknation-2026"
+  wandb_tags: ["hormonal", "compare"]
+  mlflow_experiment: "hormonal-phase-clf"
+  out_dir: "./experiments/hormonal"
