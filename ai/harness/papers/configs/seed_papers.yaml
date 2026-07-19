@@ -1,0 +1,105 @@
+# seed_papers.yaml
+#
+# "빠르게 학습해서 빨리 shipping 한다" 를 위한 큐레이션 시드 목록.
+# 02_download_papers.py --seeds 로 arxiv 제목 검색을 통해 해석·다운로드된다.
+#
+# ⚠️ 주의: 이 목록은 큐레이터(Claude)의 사전 지식(~2025년 5월)에서 뽑은 것이라
+#    arxiv ID 를 직접 적지 않고 **제목만** 기입했다. 스크립트가 arxiv 에서
+#    제목으로 검색해 실제 ID/PDF 를 해석한다. 매칭 실패는 로그에 남는다.
+#    (인용수 상위 자동 수집과 별개로, "반드시 있어야 할 고전/기준점"을 보장하는 용도)
+
+category: fast_learning
+
+groups:
+
+  # ── 1. In-context / few-shot: 파인튜닝 없이 즉시 성능 올리기 ───────────────
+  in_context_learning:
+    note: >
+      해커톤 1일차에 가장 값싼 레버. 가중치를 안 건드리고 프롬프트만으로
+      성능을 올리는 방법과, 그게 왜 되는지에 대한 이해.
+    papers:
+      - "Language Models are Few-Shot Learners"
+      - "Many-Shot In-Context Learning"
+      - "Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?"
+      - "What learning algorithm is in-context learning? Investigations with linear models"
+      - "Larger language models do in-context learning differently"
+
+  # ── 2. 추론 유도 프롬프팅: 같은 모델에서 더 많은 성능 뽑기 ────────────────
+  reasoning_prompting:
+    note: >
+      모델 교체·학습 없이 정확도를 올리는 표준 도구상자.
+      Self-Consistency 는 특히 비용 대비 효과가 크다.
+    papers:
+      - "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models"
+      - "Self-Consistency Improves Chain of Thought Reasoning in Language Models"
+      - "Tree of Thoughts: Deliberate Problem Solving with Large Language Models"
+      - "Large Language Models are Zero-Shot Reasoners"
+      - "Least-to-Most Prompting Enables Complex Reasoning in Large Language Models"
+
+  # ── 3. Test-time: 추론 시점에 계산을 더 써서 학습을 대체 ──────────────────
+  test_time:
+    note: >
+      "학습할 시간이 없다" 는 해커톤 제약에 정확히 대응하는 연구 라인.
+      학습 대신 추론 예산을 늘리는 게 언제 더 이득인지를 정량화한다.
+    papers:
+      - "Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters"
+      - "The Surprising Effectiveness of Test-Time Training for Abstract Reasoning"
+      - "Test-Time Training with Self-Supervision for Generalization under Distribution Shifts"
+      - "Large Language Monkeys: Scaling Inference Compute with Repeated Sampling"
+
+  # ── 4. Self-improvement: 라벨 없이 모델이 스스로 데이터를 만든다 ──────────
+  self_improvement:
+    note: >
+      정답 데이터가 없을 때 부트스트랩하는 방법. 해커톤에서 라벨링 인력이
+      없을 때 쓰는 핵심 패턴.
+    papers:
+      - "STaR: Bootstrapping Reasoning With Reasoning"
+      - "Self-Refine: Iterative Refinement with Self-Feedback"
+      - "Self-Rewarding Language Models"
+      - "Constitutional AI: Harmlessness from AI Feedback"
+      - "Large Language Models Cannot Self-Correct Reasoning Yet"   # 반대편 증거 (중요)
+
+  # ── 5. 데이터 효율: 적은 데이터로 큰 효과 ──────────────────────────────────
+  data_efficiency:
+    note: >
+      "1000개 잘 고른 샘플 > 10만개 잡음 데이터". 해커톤 파인튜닝의 기본 전제.
+    papers:
+      - "LIMA: Less Is More for Alignment"
+      - "Textbooks Are All You Need"
+      - "Self-Instruct: Aligning Language Models with Self-Generated Instructions"
+      - "WizardLM: Empowering Large Language Models to Follow Complex Instructions"
+      - "AlpaGasus: Training A Better Alpaca with Fewer Data"
+
+  # ── 6. 증류·소형화: 큰 모델의 실력을 작은 모델로 빠르게 옮기기 ────────────
+  distillation_transfer:
+    note: >
+      데모용으로 작고 빠른 모델이 필요할 때. mlops_serving 카테고리와 겹침.
+    papers:
+      - "Distilling Step-by-Step! Outperforming Larger Language Models with Less Training Data"
+      - "Orca: Progressive Learning from Complex Explanation Traces of GPT-4"
+      - "MiniLLM: Knowledge Distillation of Large Language Models"
+
+  # ── 7. 메타러닝·커리큘럼: 이론적 배경 (선택) ──────────────────────────────
+  meta_curriculum:
+    note: >
+      시간 여유 있을 때 읽는 배경 이론. 해커톤 당일에는 우선순위 낮음.
+    papers:
+      - "Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks"
+      - "Curriculum Learning"
+      - "On the Measure of Intelligence"
+
+# ── 참고: 인간의 학습 속도에 관한 문헌 (arxiv 아님, 자동 다운로드 대상 아님) ──
+# 아래는 arxiv 에 없어서 스크립트가 받지 못한다. 직접 찾아 읽을 것.
+human_learning_refs:
+  - title: "The Role of Deliberate Practice in the Acquisition of Expert Performance"
+    authors: "Ericsson, Krampe & Tesch-Römer (1993), Psychological Review"
+    why: "의도적 연습 — 무작정 반복이 아니라 약점을 겨냥한 피드백 루프"
+  - title: "Test-Enhanced Learning: Taking Memory Tests Improves Long-Term Retention"
+    authors: "Roediger & Karpicke (2006), Psychological Science"
+    why: "인출 연습(retrieval practice) — 읽기보다 직접 짜보는 게 낫다는 근거"
+  - title: "Distributed Practice in Verbal Recall Tasks: A Review and Quantitative Synthesis"
+    authors: "Cepeda et al. (2006), Psychological Bulletin"
+    why: "분산 학습(spaced repetition)"
+  - title: "Cognitive Load Theory and Instructional Design"
+    authors: "Sweller (1988~), Cognitive Science"
+    why: "worked example 효과 — 초심자는 백지 문제보다 완성 예제에서 더 빨리 배운다"

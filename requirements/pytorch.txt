@@ -1,0 +1,24 @@
+# Install with: pip install -r requirements/pytorch.txt --index-url https://download.pytorch.org/whl/cu121 --extra-index-url https://pypi.org/simple
+# PyTorch 2.x + CUDA 12.1 (works on RTX 4060 8GB and most cloud GPUs)
+torch==2.3.1
+torchvision==0.18.1
+torchaudio==2.3.1
+
+# HF ecosystem
+transformers>=4.43
+accelerate>=0.33
+peft>=0.12
+trl>=0.9
+datasets>=2.20
+tokenizers>=0.19
+safetensors>=0.4
+huggingface_hub>=0.24
+sentencepiece>=0.2
+
+# Vision
+timm>=1.0
+einops>=0.8
+
+# Memory / speed on 4060 8GB
+bitsandbytes>=0.43   # 4-bit / 8-bit quantization
+xformers>=0.0.27     # optional; skip on unsupported GPUs

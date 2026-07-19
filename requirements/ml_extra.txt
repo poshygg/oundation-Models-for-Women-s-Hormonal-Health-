@@ -1,0 +1,23 @@
+# Classical ML + viz + CV utils
+scikit-learn>=1.5
+scipy>=1.13
+matplotlib>=3.9
+seaborn>=0.13
+plotly>=5.22
+opencv-python>=4.10
+pillow>=10.4
+
+# Gradient-boosted trees + explainability (challenge 05 hormonal phase model)
+catboost>=1.2
+xgboost>=2.0
+lightgbm>=4.3
+interpret-core>=0.6   # EBM glassbox
+shap>=0.45
+pyarrow>=16.0
+
+# LLM clinical-report generation (ai/hormonal/explain.py); either provider works
+openai>=1.30
+anthropic>=0.30
+
+# TabPFN backend (weights need a one-time license token, see ai/hormonal/README.md)
+tabpfn>=2.0

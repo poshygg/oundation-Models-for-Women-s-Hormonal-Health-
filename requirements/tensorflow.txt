@@ -1,0 +1,5 @@
+# Install with plain pip. CUDA 12.1 wheels are bundled since 2.15.
+tensorflow[and-cuda]>=2.15,<2.17
+tensorflow-datasets>=4.9
+keras-cv>=0.9
+keras-nlp>=0.14

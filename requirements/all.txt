@@ -1,0 +1,8 @@
+# One-shot: install everything. Note: pytorch.txt needs the CUDA index-url,
+# so prefer installing pytorch.txt separately per setup_guide.md.
+-r base.txt
+-r pytorch.txt
+-r tensorflow.txt
+-r ai_harness.txt
+-r ml_extra.txt
+-r dev.txt

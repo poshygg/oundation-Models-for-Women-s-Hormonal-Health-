@@ -1,0 +1,8 @@
+# Eval harness stack — used by ai/harness/
+lm-eval>=0.4.3            # EleutherAI lm-evaluation-harness
+inspect-ai>=0.3           # UK AISI Inspect
+evaluate>=0.4
+rouge-score>=0.1.2
+sacrebleu>=2.4
+bert-score>=0.3.13
+nltk>=3.9

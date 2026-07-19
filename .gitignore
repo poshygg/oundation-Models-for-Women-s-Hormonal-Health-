@@ -17,16 +17,19 @@ __pycache__/
 !.env.example
 
 # Data (keep folder structure only)
-data/*
-!data/*/
+data/**
+!data/**/
 !data/**/.gitkeep
 
 # Experiments / runs
-experiments/*
-!experiments/*/
+experiments/**
+!experiments/**/
 !experiments/**/.gitkeep
 wandb/
 mlruns/
+
+# Training artifacts
+catboost_info/
 
 # Model artifacts
 *.ckpt
