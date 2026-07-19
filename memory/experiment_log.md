@@ -19,6 +19,39 @@
 ## 실험 기록
 <!-- 여기 아래에 최신 실험부터 -->
 
+### exp/260719-dsb-ensemble (days_since_bleed + 피처축소 + CatBoost/TabPFN 앙상블)
+- **Time budget**: est ~15분 vs actual ~11분 (CatBoost full 380s + TabPFN top-25/30 각 ~120s + 앙상블 무료). 게이트 통과.
+- **가설**: (1) onset 기반 `days_since_bleed`(flow_volume 파생, 누수 없음)가 any-flow-reset `days_since_flow`보다 강한 cycle 위치 피처다. (2) TabPFN 피처축소+앙상블로 CatBoost+HSMM 0.644를 넘는다.
+- **셋업**: master_2022, base+anchor+dsb 146피처, LOSO 42-fold. CatBoost(full) + TabPFN v2(GPU, n_est=8, CatBoost-importance top-25/30). 앙상블=OOF 확률 가중평균(w_cb 스윕) → HSMM. 코드 `ml/mcphases/model_layer_dsb_ensemble.py`.
+- **결과 (+HSMM)**:
+  - **days_since_bleed가 최대 레버**: CatBoost 0.644 → **0.658** (+0.014), Fertility 0.466 → **0.506**. dsb importance 1위(23.1).
+  - `days_since_flow`와 **동일 원천(flow_volume)=중복** (둘 다 넣으면 dsb 17.3/dsf 8.4로 신호 분할). → dsf 제거, dsb만 사용.
+  - **best = 앙상블(CB 0.7 / TabPFN-top25 0.3) +HSMM = macroF1 0.662 / acc 0.679** → 공개 honest SOTA(0.662/0.676) **동률·acc 미세 상회.**
+  - top-25 > top-30 (0.662 vs 0.656): TabPFN은 피처 더 줄일수록 유리.
+- **해석**: win의 대부분은 앙상블이 아니라 **피처(dsb)**. CatBoost+dsb+HSMM 단독 0.658로 95% 확보, 앙상블은 마지막 +0.004. 전부 누수-free 위 정직한 수치.
+- **sin/cos**: 다른 창 attempt4에서 트리엔 무용 확인(-0.006) → 본 실험엔 미포함(정합).
+- **다음 스텝**: (1) data.py leakage 수정 커밋(전제), (2) AutoTabPFN을 앙상블 파트너로(고비용, parity 이상 불확실), (3) Fertility 전용 detector.
+- **링크**: `experiments/hormonal/dsb_only_ensemble.log`
+
+### exp/260719-hsmm-aligned + sincos (attempt 3,4)
+- **HSMM 정합(attempt3):** base+anchor 0.621 → **+HSMM 0.644 / acc 0.654** (Mens .762 Foll .609 Fert .468 Lute .736). 지속시간 fold별 학습(누수 없음)+skip_prob. 논문 +0.03과 유사한 +0.023. **정직한 best, SOTA 0.662와 격차 0.018(노이즈).**
+- **sin/cos cycle(attempt4) — 실패:** base+anchor+cycle +HSMM **0.638** (-0.006), Fertility 0.468→0.457. **트리엔 sin/cos 무용**(트리는 days_since_flow 임계분할로 원형을 이미 처리). cyc_len=개인지문 노이즈. → **sin/cos는 선형/NN용, 트리엔 폐기.** 다른 창에 "트리면 실측 후 결정" 전달 필요.
+- **현재 정직 best = 0.644.** 남은 상승 여지 = Fertility detector(불확실).
+- **링크:** `ml/mcphases/attempt3_hsmm.py`, `attempt4_cycle.py`, `experiments/hormonal/attempt{3,4}*.log`
+
+### exp/260719-attempt2-variability (웨어러블 변동성 법칙 검증)
+- **가설:** 논문의 "증상 rolling std 지배(45%)" 법칙이 웨어러블에도 성립하나?
+- **결과 (웨어러블만, 2022 master):** A 절대값(raw+mean) 0.333 > B 변동성(raw+std) 0.311, C 둘다 0.343. SHAP: **mean 51.4% > std 38.3%** (논문 증상 std 45%와 반대).
+- **결론:** **법칙이 뒤집힘.** 웨어러블은 절대값(황체기 shift) > 변동성. 증상=주관적척도→변동성, 웨어러블=객관적센서→절대수준. 물리적으로 타당한 **방어 가능한 차별화 발견**. 실용: mean+std 둘 다 유지(이미 그럼). Attempt 4(SSL)는 데이터 부족으로 스킵 결정.
+- **링크:** `ml/mcphases/attempt2_variability.py`, `experiments/hormonal/attempt2.log`
+
+### exp/260719-data-align + attempt1-ovulation-anchor
+- **데이터 정합 (2022 master table):** `ml/mcphases/build_master.py` — 2022 한정 + 14일 warmup + 5일 결측런 행제외. 논문 재현뷰 2,965행/42명(논문 2,983/41 근접), 멀티모달뷰 3,110행(웨어러블로 +145 살림).
+- **⭐ 최대 발견:** 정합만으로 base macroF1 **0.614** (이전 정직값 ~0.52 → **+0.09**). 원인 = 증상-빈 2024 행 제거. 아직 HSMM 없이도 SOTA 0.662 근접.
+- **Attempt 1 (배란 앵커, 인과적 온도/심박 shift 피처):** base 0.614 → +anchor **0.621** (+0.008), Fertility F1 0.453→**0.462** (+0.008). 방향 양성이나 노이즈 경계. Fertility 여전히 병목(논문 0.462와 동일).
+- **판단:** ① 2022 마스터 정합을 메인 채택(+0.09), ② 앵커 유지(소폭·물리근거), ③ Fertility엔 **2단계 배란 detector**(피처융합 아닌 분리) 검토.
+- **링크:** `ml/mcphases/attempt1_ovulation.py`, `experiments/hormonal/attempt1.log`, `data/processed/mcphases_master_2022.parquet`
+
 ### exp/260719-LEAKAGE-days_since_bleed ⚠️ 중요 정정
 - **발견:** `ai/hormonal/data.py:_days_since_bleed`가 **phase 라벨(phase_idx==Menstrual)**로 월경 시작일을 계산 → **타깃 누수**. 이 피처가 SHAP 1.278로 지배적 1위였음.
 - **ablation (LOSO, CatBoost):**

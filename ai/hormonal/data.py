@@ -20,7 +20,6 @@ by subject id, so nothing crosses the leave-one-subject-out boundary.
 
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -84,6 +83,7 @@ class Dataset:
     synthetic: bool
     y_reg: np.ndarray | None = None      # (n, 3) hormone levels [lh, estrogen, pdg], if available
     hormone_names: list[str] | None = None
+    segment: np.ndarray | None = None    # (n,) contiguous (subject, interval) id; rows are day-ordered within it
 
 
 ## ----------------------------------------------------------------------------
@@ -250,19 +250,16 @@ def engineer(raw: pd.DataFrame, cfg: dict) -> Dataset:
     windows = list(fcfg["rolling_windows"])
     raw = raw.sort_values([SUBJECT_COL, INTERVAL_COL, TIME_COL]).reset_index(drop=True)
 
-    ## Base signals as floats (ordinal encoded), NaN filled within segment so
-    ## rolling stats are clean. Segment = subject x study interval. Columns that
-    ## are entirely missing in a segment (e.g. CGM in interval 2) fall back to the
-    ## global median, so per-segment empty-median warnings are expected and safe.
+    ## Base signals as floats (ordinal encoded). NaN is PRESERVED, not imputed:
+    ## every backend we use (LightGBM / XGBoost / CatBoost / EBM / TabPFN) handles
+    ## missing natively and can split on it, so "not reported" (a ~42% signal for
+    ## self-report symptoms) and "device absent" (CGM in interval 2) stay informative
+    ## instead of being papered over with a fabricated median. Rolling stats below
+    ## use min_periods=1 so they still produce a value wherever the window has data.
     seg = [SUBJECT_COL, INTERVAL_COL]
     base = pd.DataFrame({SUBJECT_COL: raw[SUBJECT_COL].values, INTERVAL_COL: raw[INTERVAL_COL].values})
     for c in cols:
         base[c] = _encode_ordinal(raw[c]) if c in ORDINAL_COLS else raw[c].astype(float)
-    gseg = base.groupby(seg, sort=False)
-    with np.errstate(all="ignore"), warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        base[cols] = gseg[cols].transform(lambda x: x.fillna(x.median()))
-        base[cols] = base[cols].fillna(base[cols].median()).fillna(0.0)
 
     ## Accumulate every derived column in a dict, then build the frame once
     ## (avoids the fragmentation from hundreds of individual inserts).
@@ -280,13 +277,26 @@ def engineer(raw: pd.DataFrame, cfg: dict) -> Dataset:
             b = g[c].transform(lambda x: x.quantile(0.25)).to_numpy()
             out[f"{c}_dev_base"] = base[c].to_numpy() - b
 
+    ## Within-segment z-score: each person's signal RELATIVE to their own
+    ## distribution. Measured +0.018 macro-F1 in the symptoms-only setting, but
+    ## NEUTRAL for the full multimodal pipeline (wearables + dev_base already carry
+    ## person-relative info), so it is opt-in rather than default.
+    if fcfg.get("add_zscore", False):
+        for c in cols:
+            mu = g[c].transform("mean").to_numpy()
+            sd = g[c].transform("std").to_numpy()
+            sd = np.where(np.isnan(sd) | (sd == 0), np.nan, sd)   # NaN -> feature NaN (backends handle)
+            out[f"{c}_z"] = (base[c].to_numpy() - mu) / sd
+
     out["days_since_bleed"] = _days_since_bleed(raw)
     if "is_weekend" in raw.columns:
         out["is_weekend"] = raw["is_weekend"].astype(float).to_numpy()
     else:
         out["is_weekend"] = (raw[TIME_COL].to_numpy() % 7 >= 5).astype(float)
 
-    feats = pd.DataFrame(out).fillna(0.0)
+    ## NaN preserved (see base-signal note above). is_weekend is always defined;
+    ## days_since_bleed is NaN until the first detected period onset in a segment.
+    feats = pd.DataFrame(out)
     feature_names = list(feats.columns)
 
     y_reg, hormone_names = None, None
@@ -294,6 +304,11 @@ def engineer(raw: pd.DataFrame, cfg: dict) -> Dataset:
     if present_h:
         y_reg = raw.reindex(columns=HORMONE_COLS).to_numpy(dtype=float)  # NaN kept; regression masks it
         hormone_names = list(HORMONE_COLS)
+
+    ## Contiguous segment id per row (rows already sorted by subject/interval/day),
+    ## so temporal smoothing can decode each recording segment in day order.
+    segment = pd.factorize(pd.MultiIndex.from_arrays(
+        [raw[SUBJECT_COL].to_numpy(), raw[INTERVAL_COL].to_numpy()]))[0]
 
     return Dataset(
         X=feats.reset_index(drop=True),
@@ -304,36 +319,45 @@ def engineer(raw: pd.DataFrame, cfg: dict) -> Dataset:
         synthetic=False,
         y_reg=y_reg,
         hormone_names=hormone_names,
+        segment=segment,
     )
 
 
+## Cycle-day reconstruction knobs. A bleeding EPISODE onset requires flow at least
+## this heavy, following at least this many non-bleeding days — so mid-cycle
+## spotting and multi-day periods don't reset the clock. Tuned on the calendar-only
+## LOSO diagnostic (0.425 -> 0.526 acc vs the naive any-flow reset).
+_BLEED_MIN_SEVERITY = 2.0   # >= "Light" on the 0-6 SEVERITY_MAP (excludes spotting)
+_BLEED_MIN_GAP = 10         # days; two onsets can't be closer than this
+
+
 def _days_since_bleed(raw: pd.DataFrame) -> np.ndarray:
-    """Days since the most recent REPORTED menstrual flow, within each segment.
+    """Days since the most recent menstrual-flow EPISODE onset, within each segment.
 
-    LEAKAGE FIX (2026-07): previously this counted days since the Menstrual *phase
-    label*, which leaks the target — that feature dominated SHAP (1.278) and inflated
-    LOSO macro-F1 by ~0.17 (0.52 honest -> 0.67 leaked). Cycle position is now derived
-    from the self-reported `flow_volume` symptom only, which is available at inference
-    time and carries no label leakage. Never use `phase`/`phase_idx` to build a feature.
+    Cycle position derived from the self-reported `flow_volume` symptom ONLY — never
+    from `phase`/`phase_idx` (that would leak the target). LEAKAGE HISTORY: an earlier
+    version counted days since the Menstrual *label*, which inflated LOSO macro-F1 by
+    ~0.15 (0.52 honest -> 0.67 leaked); removed.
+
+    Episode logic (not a naive any-flow reset): an onset is the first day of a
+    bleeding run (flow >= Light) that follows >= _BLEED_MIN_GAP non-bleeding days, so
+    spotting and long periods don't cause spurious resets. NaN before the first
+    detected onset (cycle position unknown) — every backend handles the NaN.
     """
-    out = np.zeros(len(raw), dtype=float)
-    flow = raw["flow_volume"] if "flow_volume" in raw.columns else None
-
-    def _is_bleed(v) -> bool:
-        if pd.isna(v):
-            return False
-        if isinstance(v, str):
-            return v.strip().lower() != "not at all"
-        return float(v) > 0
-
+    if "flow_volume" not in raw.columns:
+        return np.full(len(raw), np.nan)
+    flow = _encode_ordinal(raw["flow_volume"]).to_numpy()
+    out = np.full(len(raw), np.nan)
     for _, idx in raw.groupby([SUBJECT_COL, INTERVAL_COL], sort=False).groups.items():
-        counter = None
-        for r in list(idx):
-            if flow is not None and _is_bleed(flow.iloc[r]):
-                counter = 0
-            elif counter is not None:
-                counter += 1
-            out[r] = counter if counter is not None else 0.0
+        rows = list(idx)
+        onset, last_bleed = None, -(10 ** 9)
+        for i, r in enumerate(rows):
+            bleed = (not np.isnan(flow[r])) and flow[r] >= _BLEED_MIN_SEVERITY
+            if bleed and (i - last_bleed) >= _BLEED_MIN_GAP:
+                onset = i
+            if bleed:
+                last_bleed = i
+            out[r] = (i - onset) if onset is not None else np.nan
     return out
 
 
