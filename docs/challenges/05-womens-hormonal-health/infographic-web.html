@@ -1,0 +1,218 @@
+<style>
+  :root{
+    --ground:#e7edee; --card:#ffffff; --ink:#152229; --muted:#586a70; --line:#d4dcdf;
+    --teal:#0d7377; --teal-bg:#d9ebeb; --plum:#9c3d67; --plum-bg:#f0dde7;
+    --amber:#8f6410; --amber-bg:#f3e9d3;
+    --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --maxw:920px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#0e1417; --card:#161f23; --ink:#e9eff1; --muted:#93a2a7; --line:#27343b;
+      --teal:#4fbdbb; --teal-bg:#123230; --plum:#d98cae; --plum-bg:#33202b;
+      --amber:#d6a340; --amber-bg:#2f2716;
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#e7edee; --card:#ffffff; --ink:#152229; --muted:#586a70; --line:#d4dcdf;
+    --teal:#0d7377; --teal-bg:#d9ebeb; --plum:#9c3d67; --plum-bg:#f0dde7;
+    --amber:#8f6410; --amber-bg:#f3e9d3;
+  }
+  :root[data-theme="dark"]{
+    --ground:#0e1417; --card:#161f23; --ink:#e9eff1; --muted:#93a2a7; --line:#27343b;
+    --teal:#4fbdbb; --teal-bg:#123230; --plum:#d98cae; --plum-bg:#33202b;
+    --amber:#d6a340; --amber-bg:#2f2716;
+  }
+  .ig{background:var(--ground);color:var(--ink);font-family:var(--font-sans);line-height:1.55;padding:40px 20px 56px}
+  .ig *{box-sizing:border-box}
+  .ig-in{max-width:var(--maxw);margin:0 auto}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin:0 0 14px}
+  .title{font-size:clamp(27px,4.6vw,42px);font-weight:700;letter-spacing:-.02em;line-height:1.09;margin:0 0 14px;text-wrap:balance;max-width:18ch}
+  .thesis{font-size:clamp(15px,2.3vw,18px);color:var(--muted);margin:0;max-width:56ch}
+  .curve{width:100%;height:auto;display:block;margin:26px 0 6px;opacity:.9}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .pill{font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;padding:7px 13px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink)}
+  .pill i{color:var(--teal);font-style:normal}
+  .band{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:46px 0 8px;display:flex;align-items:center;gap:12px}
+  .band::after{content:"";flex:1;height:1px;background:var(--line)}
+  .lead{font-size:14px;color:var(--muted);margin:0 0 16px;max-width:64ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:620px){.two{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .sub{font-size:12.5px;font-family:var(--font-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--plum);margin:0 0 10px}
+  .sub.tl{color:var(--teal)}
+  .ref{padding:11px 0;border-top:1px solid var(--line)}
+  .ref:first-of-type{border-top:none;padding-top:2px}
+  .reft{font-size:14.5px;font-weight:600;margin:0 0 3px;letter-spacing:-.01em}
+  .reft span{color:var(--muted);font-weight:400;font-family:var(--font-mono);font-size:12px}
+  .refm{font-size:13.5px;color:var(--muted);margin:0;font-variant-numeric:tabular-nums}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+  .mchip{font-size:13px;padding:9px 13px;border-radius:10px;background:var(--ground);border:1px solid var(--line);flex:1;min-width:150px}
+  .mchip b{font-weight:600;display:block;margin-bottom:2px}
+  .mchip small{color:var(--muted);font-size:12.5px}
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin-top:4px}
+  .step{flex:1;min-width:120px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 12px;font-size:12.5px;display:flex;align-items:center;justify-content:center;text-align:center}
+  .step.hot{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
+  .arrow{display:flex;align-items:center;color:var(--muted);font-size:19px}
+  @media (max-width:560px){.arrow{transform:rotate(90deg)}.flow{flex-direction:column}}
+  .note{margin-top:44px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="ig">
+  <div class="ig-in">
+
+    <p class="eyebrow">6th global ai hackathon · challenge 05 · methods reference</p>
+    <h1 class="title">Modeling women's hormonal health</h1>
+    <p class="thesis">How prior work learns from wearable signals — the models, the validation, and how sensitive health data is blinded before any of it happens.</p>
+
+    <svg class="curve" viewBox="0 0 900 120" role="img" aria-label="Stylized estrogen and progesterone curves across the menstrual cycle" preserveAspectRatio="none">
+      <line x1="0" y1="108" x2="900" y2="108" stroke="var(--line)" stroke-width="1"/>
+      <path d="M0,96 C150,92 250,40 430,34 C500,54 540,60 600,74 C700,88 800,72 900,80" fill="none" stroke="var(--teal)" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M0,104 C200,103 350,101 470,92 C560,84 600,44 662,42 C744,40 820,92 900,100" fill="none" stroke="var(--plum)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="430" cy="34" r="4" fill="var(--teal)"/>
+      <circle cx="662" cy="42" r="4" fill="var(--plum)"/>
+    </svg>
+
+    <div class="pills">
+      <span class="pill"><i>01</i>&nbsp; Data blinding</span>
+      <span class="pill"><i>02</i>&nbsp; Learning structure</span>
+      <span class="pill"><i>03</i>&nbsp; Analysis &amp; validation</span>
+    </div>
+
+    <p class="band">01 · Data blinding &amp; privacy</p>
+    <p class="lead">Health data is high-sensitivity — de-identification is the first step, not an afterthought.</p>
+    <div class="two">
+      <div class="card">
+        <p class="sub">De-identification — what mcPHASES actually did</p>
+        <div class="ref">
+          <p class="reft">Remove direct identifiers</p>
+          <p class="refm">Names, emails, device IDs stripped (HIPAA standard).</p>
+        </div>
+        <div class="ref">
+          <p class="reft">Blind the dates</p>
+          <p class="refm">Absolute dates → relative <code>day_in_study</code>; only a weekday / weekend flag kept.</p>
+        </div>
+        <div class="ref">
+          <p class="reft">Preserve rawness</p>
+          <p class="refm">No imputation — keeps the data real and reproducible.</p>
+        </div>
+      </div>
+      <div class="card">
+        <p class="sub">Privacy-preserving training</p>
+        <div class="chips">
+          <div class="mchip"><b>Federated learning</b><small>Data stays on device; only model weights are shared.</small></div>
+          <div class="mchip"><b>Synthetic data</b><small>Train / share on generated data, not real records.</small></div>
+          <div class="mchip"><b>Aggregation / k-anonymity</b><small>Publish statistics, never individual rows.</small></div>
+          <div class="mchip"><b>Differential privacy</b><small>Add noise so individuals can't be re-traced.</small></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="band">02 · Learning structure &amp; methods</p>
+    <p class="lead">Across the literature the shape is consistent: signal → physiology-grounded features → gradient-boosted trees. Deep and statistical models come second.</p>
+    <div class="card" style="margin-bottom:14px">
+      <p class="sub tl">Feature-based trees — the primary approach</p>
+      <div class="ref">
+        <p class="reft">Random forest <span>Empatica · 2019</span></p>
+        <p class="refm">Skin temp, EDA, IBI, HR → 3-phase classification. 87%, AUROC 0.96.</p>
+      </div>
+      <div class="ref">
+        <p class="reft">LightGBM <span>ovulation · 2025</span></p>
+        <p class="refm">ECG HRV temporal patterns + temperature → ovulation window.</p>
+      </div>
+      <div class="ref">
+        <p class="reft">CatBoost <span>estradiol · 2026</span></p>
+        <p class="refm">Sensor time / morphology features → estradiol level (regression).</p>
+      </div>
+      <div class="ref">
+        <p class="reft">XGBoost <span>glucose · 2025</span></p>
+        <p class="refm">Multimodal wearables → glucose. Trees beat linear models; R² 0.73.</p>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <p class="sub tl">Deep-learning time series</p>
+        <div class="ref">
+          <p class="reft">TCN + LSTM <span>multimodal · 2024</span></p>
+          <p class="refm">Temp, HRV, EDA, sleep as raw sequences → real-time phase prediction. Convolution for short patterns, LSTM for long dependencies.</p>
+        </div>
+      </div>
+      <div class="card">
+        <p class="sub tl">Statistical time series</p>
+        <div class="ref">
+          <p class="reft">ARIMA <span>Frontiers · 2023</span></p>
+          <p class="refm">Forecasts next-day signals (temp, HR).</p>
+        </div>
+        <div class="ref">
+          <p class="reft">Circular statistics <span>2023</span></p>
+          <p class="refm">Treats the cycle as circular to analyze phase.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <p class="sub tl">Task framing</p>
+      <div class="two" style="gap:0 20px">
+        <div class="ref" style="border:none;padding-top:2px">
+          <p class="reft">Classification</p>
+          <p class="refm">4 phases (menses / late-follicular / ovulation / luteal) or ovulation yes/no — most studies.</p>
+        </div>
+        <div class="ref" style="border:none;padding-top:2px">
+          <p class="reft">Regression</p>
+          <p class="refm">Predict LH / E3G / PdG / estradiol values — possible because mcPHASES has hormone-verified labels.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="band">03 · Analysis &amp; validation</p>
+    <p class="lead">This is what separates a credible result from an inflated one.</p>
+    <div class="two">
+      <div class="card">
+        <p class="sub">Splits &amp; labels</p>
+        <div class="ref">
+          <p class="reft">Subject-level split</p>
+          <p class="refm">Same person never in train and test — critical at N=42, or scores inflate.</p>
+        </div>
+        <div class="ref">
+          <p class="reft">Hormone-verified labels</p>
+          <p class="refm">mcPHASES uses measured LH/E3G/PdG; most prior work uses noisy self-report.</p>
+        </div>
+        <div class="ref">
+          <p class="reft">Regular vs irregular</p>
+          <p class="refm">Reported separately — accuracy drops to 50–80% on irregular cycles.</p>
+        </div>
+      </div>
+      <div class="card">
+        <p class="sub">Metrics &amp; interpretation</p>
+        <div class="ref">
+          <p class="reft">Performance</p>
+          <p class="refm">Balanced accuracy, AUROC (up to 0.96), R² (0.73), F1.</p>
+        </div>
+        <div class="ref">
+          <p class="reft">Calibration + no-call</p>
+          <p class="refm">Brier + reliability curve; abstain when evidence is weak.</p>
+        </div>
+        <div class="ref">
+          <p class="reft">Explainability</p>
+          <p class="refm">SHAP for drivers; feature importance ≠ biological cause; subgroup-equity audit.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="band">The pipeline, end to end</p>
+    <div class="flow">
+      <div class="step">Blinding<br><small style="color:var(--muted)">de-id · federated</small></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step">Physiology features</div>
+      <div class="arrow">&rarr;</div>
+      <div class="step hot">Gradient boosting<br><small>classify / regress</small></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step">Subject-level eval<br><small style="color:var(--muted)">+ calibration</small></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step">SHAP · no-call</div>
+    </div>
+
+    <p class="note">Research reference, not a diagnostic tool. Data: mcPHASES (PhysioNet, N=42, HIPAA de-identified), NHANES (CDC). Precedents surveyed 2026-07 — full source URLs in research-notes.md.</p>
+
+  </div>
+</div>

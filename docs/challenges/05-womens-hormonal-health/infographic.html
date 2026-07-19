@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Challenge 05 — Women's Hormonal Health · Infographic</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#1a2230; --muted:#5b6673; --line:#e2e6ea;
+    --accent:#0d6e6e; --accent-bg:#e2f1f1; --warn:#8a5a00; --warn-bg:#faf0dc;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:820px;margin:0 auto;padding:32px 24px 48px}
+  .lbl{font-size:12px;color:var(--muted);letter-spacing:.03em;text-transform:uppercase;margin:0 0 10px}
+  h1{font-size:26px;font-weight:600;margin:0 0 8px}
+  .sub{font-size:15px;color:var(--muted);margin:0}
+  .sec{margin:30px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .soft{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .chip{display:inline-block;font-size:13px;padding:6px 12px;border-radius:8px;background:var(--card);border:1px solid var(--line);margin:0 6px 6px 0}
+  .badge{font-size:11px;padding:3px 9px;border-radius:8px;background:var(--accent-bg);color:var(--accent);font-weight:600}
+  .badge.mut{background:#eef1f3;color:var(--muted)}
+  .badge.warn{background:var(--warn-bg);color:var(--warn)}
+  .h{font-size:15px;font-weight:600;margin:0 0 4px}
+  .m{font-size:13px;color:var(--muted);margin:0}
+  .pick{border:2px solid var(--accent)}
+  .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .step{flex:1;min-width:120px;text-align:center;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:12px 10px;font-size:12px}
+  .step.hot{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:600}
+  .arr{color:#aab3bd;font-size:18px}
+  .concl{background:var(--accent-bg);color:var(--accent);border-radius:10px;padding:12px 14px;font-size:14px;font-weight:600;margin-top:12px}
+  .gap{border-left:4px solid var(--accent);border-radius:0 12px 12px 0}
+  .num{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="lbl">6th Global AI Hackathon · Challenge 05 · Hack-Nation × OpenAI</p>
+  <h1>Foundation models for women's hormonal health</h1>
+  <p class="sub">Contribute one reusable, open building block — not a giant foundation model in a weekend.</p>
+  <div style="margin-top:14px">
+    <span class="chip">Women's health impact</span>
+    <span class="chip">Technical excellence</span>
+    <span class="chip">Foundation value</span>
+  </div>
+
+  <div class="sec">
+    <p class="lbl">Pick one layer as the main contribution</p>
+    <div class="grid">
+      <div class="card">
+        <p class="h">01 · Data &amp; benchmark</p>
+        <p class="m">Standardized multimodal dataset + documented train/val/test splits.</p>
+        <span class="badge mut" style="margin-top:10px;display:inline-block">Foundation to lay under 02</span>
+      </div>
+      <div class="card pick">
+        <div class="row"><p class="h" style="margin:0">02 · AI model</p><span class="badge">Our pick</span></div>
+        <p class="m">Reproducible, explainable hormone / phase prediction model.</p>
+      </div>
+      <div class="card">
+        <p class="h">03 · Application</p>
+        <p class="m">Tool on top — tracker, hormone journal.</p>
+        <span class="badge warn" style="margin-top:10px;display:inline-block">App-only = weak entry</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <p class="lbl">Layer 01 — the opening</p>
+    <div class="card gap">
+      <p class="h">The field's gap: reproducibility &amp; ground truth</p>
+      <p class="m">Most wearable menstrual studies use noisy self-reported labels and never release code or splits.
+        <span class="num">mcPHASES</span> (N=42) has hormone-verified labels — turning it into a documented benchmark is itself a win.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <p class="lbl">Layer 02 — model precedents</p>
+    <div class="grid">
+      <div class="soft">
+        <p class="h" style="font-size:13px">Phase classification</p>
+        <p class="m" style="font-size:12px">Random forest 87% / AUROC 0.96 · LightGBM · TCN+LSTM</p>
+      </div>
+      <div class="soft">
+        <p class="h" style="font-size:13px">Hormone regression</p>
+        <p class="m" style="font-size:12px">CatBoost (estradiol) · XGBoost (R² 0.73)</p>
+      </div>
+      <div class="soft">
+        <p class="h" style="font-size:13px">Explainable template</p>
+        <p class="m" style="font-size:12px">PCOS AI — SHAP + calibration + fairness</p>
+      </div>
+    </div>
+    <div class="concl">Across all of them, gradient-boosted trees win on small, multimodal, tabular data.</div>
+  </div>
+
+  <div class="sec">
+    <p class="lbl">Recommended pipeline</p>
+    <div class="flow">
+      <div class="step">mcPHASES multimodal input</div>
+      <span class="arr">&rarr;</span>
+      <div class="step">Subject-level split</div>
+      <span class="arr">&rarr;</span>
+      <div class="step hot">Gradient boosting</div>
+      <span class="arr">&rarr;</span>
+      <div class="step">SHAP + calibration + no-call</div>
+      <span class="arr">&rarr;</span>
+      <div class="step">Open release</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <p class="lbl">Our 3 differentiators</p>
+    <div class="grid">
+      <div class="card">
+        <p class="h" style="font-size:14px">Hormone-verified labels</p>
+        <p class="m">vs the noisy self-reported labels most prior work relies on.</p>
+      </div>
+      <div class="card">
+        <p class="h" style="font-size:14px">Honest on irregular cycles</p>
+        <p class="m">report regular vs irregular separately, and abstain (no-call).</p>
+      </div>
+      <div class="card">
+        <p class="h" style="font-size:14px">Fully reproducible &amp; open</p>
+        <p class="m">HF model card + splits + code — attacks the reproducibility crisis.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
