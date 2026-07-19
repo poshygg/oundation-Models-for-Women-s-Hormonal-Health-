@@ -19,6 +19,22 @@
 ## 실험 기록
 <!-- 여기 아래에 최신 실험부터 -->
 
+### exp/260719-attempt5-fertility-detector ⭐ 최고 정직 모델
+- **가설:** 배란기(모든 방법 최약 클래스)를 전용 이진 detector로 공략하면 피처 융합(+0.008)보다 낫다.
+- **설계:** main 4-class + "Fertility vs rest" 이진 detector(배란 앵커·온도·심박·주기위치 20피처) 각 LOSO OOF → Fertility 확률 **고정 0.5 블렌드**(선택 편향 없음) → per-fold HSMM. 둘 다 OOF=누수 없음.
+- **결과:** detector 단독 Fert-vs-rest F1 0.532. main+HSMM 0.654(Fert .498) → **blended+HSMM macroF1 0.667 / acc 0.678, Fert F1 0.531** (+0.033 Fertility, +0.013 macro).
+- **CI (B=2000):** macroF1 0.667 **[0.620, 0.709]** → SOTA 0.662 포함(통계적 동률), 점추정은 미세 상회. 하한 0.620>레퍼런스 0.601.
+- **의미:** 논문 명시 최약점(Fert 0.462)을 **전용 2단계 배란 detector**로 공략 = 논문에 없는 아키텍처 차별화. 누수·선택편향 없는 정직값.
+- **다음:** 벤치마크 레퍼런스를 이 2단계 모델(0.667)로 교체 검토.
+- **링크:** `ml/mcphases/attempt5_fertility_detector.py`, `benchmark/results/oof_fertility_detector.parquet`
+
+### exp/260719-benchmark-package (Foundation Value 딜리버러블)
+- **오픈 벤치마크 패키지 `benchmark/`:** README, LICENSE(MIT, mcPHASES raw 제외), MODEL_CARD, `splits/loso_folds.json`(42-fold 고정), `eval/ci_harness.py`(피험자 부트스트랩 CI, model-agnostic), `eval/reference_model.py`(정직 레퍼런스), `results/oof_reference.parquet`.
+- **정직 레퍼런스 (누수-free, 선택 편향 없음):** CatBoost + dsb(flow기반) + per-fold HSMM = **macroF1 0.654 / acc 0.671**. per-class: Mens .729 Foll .626 Fert .498 Lute .764.
+- **CI (subject bootstrap B=2000):** macroF1 0.654 **[0.601, 0.701]** → **SOTA 0.662 포함 = 통계적 동률(ON PAR).** N=42라 단일점(0.654 vs 0.662)은 노이즈, CI로 보고.
+- **주의:** 이전 dsb-ensemble 0.662는 앙상블 가중치·K를 같은 LOSO에서 골라 낙관 편향. 벤치마크는 **선택 없는 정직값 0.654**를 레퍼런스로 채택.
+- **링크:** `benchmark/`, `experiments/hormonal/reference_model.log`
+
 ### exp/260719-dsb-ensemble (days_since_bleed + 피처축소 + CatBoost/TabPFN 앙상블)
 - **Time budget**: est ~15분 vs actual ~11분 (CatBoost full 380s + TabPFN top-25/30 각 ~120s + 앙상블 무료). 게이트 통과.
 - **가설**: (1) onset 기반 `days_since_bleed`(flow_volume 파생, 누수 없음)가 any-flow-reset `days_since_flow`보다 강한 cycle 위치 피처다. (2) TabPFN 피처축소+앙상블로 CatBoost+HSMM 0.644를 넘는다.
