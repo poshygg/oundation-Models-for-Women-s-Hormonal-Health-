@@ -63,6 +63,25 @@ features, per-fold HSMM durations, a fixed blend weight — no hyperparameter tu
 reported split). At N=42 a single point (0.667 vs 0.662) is within noise, so we report
 CIs, not bare points.
 
+## Wearable contribution (controlled ablation)
+
+The SOTA paper is symptom-only and never reports a wearable+symptom score — multimodal
+fusion is its stated future work. Under this benchmark's single identical (2022-aligned,
+leakage-free, LOSO + HSMM) pipeline, we quantify the pure lift of adding wearables:
+
+| Input | macro-F1 | Fertility F1 |
+|---|---|---|
+| symptoms only | 0.631 | 0.468 |
+| wearables only (no self-report) | 0.466 | 0.336 |
+| **all (multimodal)** | **0.654** | **0.498** |
+
+Adding wearables to self-report lifts **macro-F1 +0.023** and **Fertility F1 +0.030** —
+wearables help the ovulation window most (skin-temp / resting-HR shift). Wearables *alone*
+are weak (0.466): they **complement, not replace** menstruation logging — a direct, honest
+answer to the field's flow-dependence debate. (Our symptom-only 0.631 trails the paper's
+0.662 because their symptom feature set is richer; a fuller symptom encoding would raise
+the multimodal number further.)
+
 ## ⚠️ Leakage audit (a methods contribution)
 
 A naive "days since last period" feature computed from the **phase label** inflated

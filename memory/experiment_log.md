@@ -19,6 +19,15 @@
 ## 실험 기록
 <!-- 여기 아래에 최신 실험부터 -->
 
+### exp/260719-attempt6-modality-ablation (웨어러블 순수 기여 — 논문 미측정)
+- **동일 2022 정합·누수-free·LOSO+HSMM에서 입력 모달리티 비교:**
+  - symptoms_only: macroF1 **0.631** (Fert 0.468)
+  - wearables_only: **0.466** (Fert 0.336) — 자가보고 없이 약함
+  - all(멀티모달): **0.654** (Fert 0.498)
+- **웨어러블 순수 기여: macroF1 +0.023, Fertility +0.030.** 논문 간 비교(0.667 vs 0.662)보다 통제된 증거. 논문은 증상-only(0.662)만 보고, 멀티모달 점수 없음(future work).
+- **해석:** 웨어러블은 배란기를 가장 크게 도움(+0.030) = 체온/심박 shift. wearables_only 0.466 → **대체 아닌 보완**(flow-의존 논쟁에 정직한 답). caveat: 우리 symptom-only 0.631<논문 0.662(그들 83피처가 더 풍부) → 증상 피처 강화 시 멀티모달 상향 여지.
+- **링크:** `ml/mcphases/attempt6_modality_ablation.py`, `experiments/hormonal/attempt6_ablation.log`
+
 ### exp/260719-attempt5-fertility-detector ⭐ 최고 정직 모델
 - **가설:** 배란기(모든 방법 최약 클래스)를 전용 이진 detector로 공략하면 피처 융합(+0.008)보다 낫다.
 - **설계:** main 4-class + "Fertility vs rest" 이진 detector(배란 앵커·온도·심박·주기위치 20피처) 각 LOSO OOF → Fertility 확률 **고정 0.5 블렌드**(선택 편향 없음) → per-fold HSMM. 둘 다 OOF=누수 없음.
