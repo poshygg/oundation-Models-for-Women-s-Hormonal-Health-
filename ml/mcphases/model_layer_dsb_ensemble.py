@@ -92,7 +92,7 @@ def main():
     show("+HSMM", yi, hsmm_smooth(cb_oof, seg, mean_dur=mean, sd_dur=sd, skip_prob=0.02)); print()
 
     prior_g = np.bincount(yi, minlength=4) / len(yi)
-    for K in (25, 30):
+    for K in (15, 20, 25):
         top = imp.head(K).index.tolist()
         t = time.time(); tp_oof, _ = loso_proba(df, top, make_tabpfn)
         print(f"[TabPFN top-{K}+dsb]  ({time.time()-t:.0f}s)")
